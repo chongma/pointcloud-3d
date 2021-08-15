@@ -1,0 +1,25 @@
+{
+  "name": "pointcloud-3d",
+  "version": "1.0.0",
+  "description": "Reduce 3d point clouds using voxel grid sampling or random subsampling",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chongma/pointcloud-3d.git"
+  },
+  "keywords": [
+    "3d",
+    "pointcloud",
+    "sampling",
+    "voxel"
+  ],
+  "author": "chongma",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chongma/pointcloud-3d/issues"
+  },
+  "homepage": "https://github.com/chongma/pointcloud-3d#readme"
+}
