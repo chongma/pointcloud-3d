@@ -51,11 +51,6 @@ function findPointsInSector(data, sector) {
     return data.filter(point => isPointInSector(point, sector))
 }
 
-function findBestPointInSector(data, sector) {
-    const points = findPointsInSector(data, sector)
-    return points.length ? points[0] : undefined
-}
-
 function axisDivisions(min, max, separation) {
     let divisions = []
     for (var i = min; i < max; i = i + separation) {
@@ -65,16 +60,17 @@ function axisDivisions(min, max, separation) {
 }
 
 function determineSectors(minMax, separation) {
-    let sectors = []
     const xs = axisDivisions(minMax.min[0], minMax.max[0], separation)
     const ys = axisDivisions(minMax.min[1], minMax.max[1], separation)
     const zs = axisDivisions(minMax.min[2], minMax.max[2], separation)
-    xs.forEach(x => {
-        ys.forEach(y => {
-            zs.forEach(z => {
-                sectors.push({ start: [x, y, z], end: [x + separation, y + separation, z + separation] })
+    let sectors = xs.map(x => {
+        const y_array = ys.map(y => {
+            const z_array = zs.map(z => {
+                return { min: z, max: z + separation }
             })
+            return { min: y, max: y + separation, zs: z_array }
         })
+        return { min: x, max: x + separation, ys: y_array }
     })
     return sectors
 }
@@ -92,15 +88,28 @@ function reduceSampling(data = [], factor = 5) {
 function reduceVoxel(data = [], separation = 0.05) {
     checkData(data)
     const minMax = calculateMinMax(data)
-    const sectors = determineSectors(minMax, separation)
-    let points = []
-    sectors.forEach(sector => {
-        const point = findBestPointInSector(data, sector)
-        if (point) {
-            points.push(point)
+    const xs = determineSectors(minMax, separation)
+    let result = []
+    xs.forEach(x => {
+        const sector_x = { start: [x.min, minMax.min[1], minMax.min[2]], end: [x.max, minMax.max[1], minMax.max[2]] }
+        const p_x = findPointsInSector(data, sector_x)
+        if (p_x.length) {
+            x.ys.forEach(y => {
+                const sector_y = { start: [x.min, y.min, minMax.min[2]], end: [x.max, y.max, minMax.max[2]] }
+                const p_y = findPointsInSector(p_x, sector_y)
+                if (p_y.length) {
+                    y.zs.forEach(z => {
+                        const sector_z = { start: [x.min, y.min, z.min], end: [x.max, y.max, z.max] }
+                        const p_z = findPointsInSector(p_y, sector_z)
+                        if (p_z.length) {
+                            result.push(p_z[0])
+                        }
+                    })
+                }
+            })
         }
     })
-    return points
+    return result
 }
 
 function reduceTargetSampling(data = [], size = 100) {
@@ -115,7 +124,6 @@ module.exports = {
     axisDivisions,
     calculateMinMax,
     determineSectors,
-    findBestPointInSector,
     findPointsInSector,
     isPointInSector,
     printMsg,
