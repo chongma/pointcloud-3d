@@ -12,8 +12,8 @@ function checkFactor(factor) {
     }
 }
 
-function calculateMinMax(data) {
-    let result = { min: [0, 0, 0], max: [0, 0, 0] }
+function calculateExtents(data) {
+    let result = { min: [0, 0, 0], max: [0, 0, 0], size: data.length }
     data.forEach(point => {
         if (point[0] < result.min[0]) {
             result.min[0] = point[0]
@@ -34,6 +34,7 @@ function calculateMinMax(data) {
             result.max[2] = point[2]
         }
     })
+    result.diff = [result.max[0] - result.min[0], result.max[1] - result.min[1], result.max[2] - result.min[2]]
     return result
 }
 
@@ -59,10 +60,10 @@ function axisDivisions(min, max, separation) {
     return divisions
 }
 
-function determineSectors(minMax, separation) {
-    const xs = axisDivisions(minMax.min[0], minMax.max[0], separation)
-    const ys = axisDivisions(minMax.min[1], minMax.max[1], separation)
-    const zs = axisDivisions(minMax.min[2], minMax.max[2], separation)
+function determineSectors(extents, separation) {
+    const xs = axisDivisions(extents.min[0], extents.max[0], separation)
+    const ys = axisDivisions(extents.min[1], extents.max[1], separation)
+    const zs = axisDivisions(extents.min[2], extents.max[2], separation)
     let sectors = xs.map(x => {
         const y_array = ys.map(y => {
             const z_array = zs.map(z => {
@@ -87,15 +88,15 @@ function reduceSampling(data = [], factor = 5) {
 
 function reduceVoxel(data = [], separation = 0.05) {
     checkData(data)
-    const minMax = calculateMinMax(data)
-    const xs = determineSectors(minMax, separation)
+    const extents = calculateExtents(data)
+    const xs = determineSectors(extents, separation)
     let result = []
     xs.forEach(x => {
-        const sector_x = { start: [x.min, minMax.min[1], minMax.min[2]], end: [x.max, minMax.max[1], minMax.max[2]] }
+        const sector_x = { start: [x.min, extents.min[1], extents.min[2]], end: [x.max, extents.max[1], extents.max[2]] }
         const p_x = findPointsInSector(data, sector_x)
         if (p_x.length) {
             x.ys.forEach(y => {
-                const sector_y = { start: [x.min, y.min, minMax.min[2]], end: [x.max, y.max, minMax.max[2]] }
+                const sector_y = { start: [x.min, y.min, extents.min[2]], end: [x.max, y.max, extents.max[2]] }
                 const p_y = findPointsInSector(p_x, sector_y)
                 if (p_y.length) {
                     y.zs.forEach(z => {
@@ -112,17 +113,43 @@ function reduceVoxel(data = [], separation = 0.05) {
     return result
 }
 
-function reduceTargetSampling(data = [], size = 100) {
+function reduceTargetSampling(data = [], size = 2048) {
 
 }
 
-function reduceTargetVoxel(data = [], size = 100) {
-
+function reduceTargetVoxel(data = [], size = 2048, iterations = 100) {
+    checkData(data)
+    const extents = calculateExtents(data)
+    let max = Math.min(...extents.diff)
+    let min = 0
+    let middle = min + ((max - min) / 2)
+    let attempts = []
+    let result = []
+    while (attempts.length < iterations) {
+        result = reduceVoxel(data, middle)
+        const attempt = { size: result.length, middle, max, min }
+        attempts.push(attempt)
+        if (result.length == size) {
+            break
+        }
+        if (attempt.size < size) {
+            max = middle
+            middle = min + ((max - min) / 2)
+        } else {
+            min = middle
+            middle = min + ((max - min) / 2)
+        }
+    }
+    console.log(attempts.length)
+    if (result.length != size) {
+        throw new Error('Could not reach target size')
+    }
+    return result
 }
 
 module.exports = {
     axisDivisions,
-    calculateMinMax,
+    calculateExtents,
     determineSectors,
     findPointsInSector,
     isPointInSector,
