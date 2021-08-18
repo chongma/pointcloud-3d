@@ -6,7 +6,7 @@ const fs = require('fs')
 const tar = require('tar')
 const pointCloudConvert = require('point-cloud-convert')
 
-const { axisDivisions, calculateMinMax, determineSectors, findPointsInSector, isPointInSector, reduceSampling, reduceVoxel } = require('./index')
+const { axisDivisions, calculateExtents, determineSectors, findPointsInSector, isPointInSector, reduceSampling, reduceTargetVoxel, reduceVoxel } = require('./index')
 
 let data = []
 
@@ -50,15 +50,15 @@ beforeAll(async () => {
     await loadData()
 })
 
-describe('calculateMinMax', () => {
-    test('Test min max', () => {
+describe('calculateExtents', () => {
+    test('Test extents', () => {
         const data = [[2, 4, 8], [-6, 3, -1], [6, -4, -5]]
-        const minMax = calculateMinMax(data)
-        expect(minMax).toEqual({ min: [-6, -4, -5], max: [6, 4, 8] })
+        const extents = calculateExtents(data)
+        expect(extents).toEqual({ min: [-6, -4, -5], max: [6, 4, 8], size: 3, diff: [12, 8, 13] })
     })
-    test('Test min max rabbit data', () => {
-        const minMax = calculateMinMax(data)
-        expect(minMax).toEqual({ min: [-0.09475, 0, -0.0586982], max: [0.061, 0.18794, 0.0587228] })
+    test('Test extents rabbit data', () => {
+        const extents = calculateExtents(data)
+        expect(extents).toEqual({ min: [-0.09475, 0, -0.0586982], max: [0.061, 0.18794, 0.0587228], size: 40257, diff: [0.15575, 0.18794, 0.117421] })
     })
 })
 
@@ -76,11 +76,11 @@ describe('axisDivisions', () => {
 describe('determineSectors', () => {
     test('Test sectors', () => {
         const separation = 0.01
-        const minMax = calculateMinMax(data)
-        const prediction_x = divisionCount(minMax.min[0], minMax.max[0], separation)
-        const prediction_y = divisionCount(minMax.min[1], minMax.max[1], separation)
-        const prediction_z = divisionCount(minMax.min[2], minMax.max[2], separation)
-        const xs = determineSectors(minMax, separation)
+        const extents = calculateExtents(data)
+        const prediction_x = divisionCount(extents.min[0], extents.max[0], separation)
+        const prediction_y = divisionCount(extents.min[1], extents.max[1], separation)
+        const prediction_z = divisionCount(extents.min[2], extents.max[2], separation)
+        const xs = determineSectors(extents, separation)
         expect(xs.length).toEqual(prediction_x)
         expect(xs[0].ys.length).toEqual(prediction_y)
         expect(xs[0].ys[0].zs.length).toEqual(prediction_z)
@@ -126,5 +126,15 @@ describe('Reduce voxel grid', () => {
     test('Should return voxel sample', () => {
         const points = reduceVoxel(data, 0.01)
         expect(points.length).toEqual(392)
+    })
+})
+
+describe('Reduce target voxel', () => {
+    test('Should not allow empty array', () => {
+        expect(() => reduceTargetVoxel()).toThrow('Data: Array must be defined')
+    })
+    test('Should return voxel sample', () => {
+        const points = reduceTargetVoxel(data, 2048)
+        expect(points.length).toEqual(2048)
     })
 })
