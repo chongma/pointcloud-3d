@@ -77,9 +77,13 @@ describe('determineSectors', () => {
     test('Test sectors', () => {
         const separation = 0.01
         const minMax = calculateMinMax(data)
-        const prediction = divisionCount(minMax.min[0], minMax.max[0], separation) * divisionCount(minMax.min[1], minMax.max[1], separation) * divisionCount(minMax.min[2], minMax.max[2], separation)
-        const sectors = determineSectors(minMax, separation)
-        expect(sectors.length).toEqual(prediction)
+        const prediction_x = divisionCount(minMax.min[0], minMax.max[0], separation)
+        const prediction_y = divisionCount(minMax.min[1], minMax.max[1], separation)
+        const prediction_z = divisionCount(minMax.min[2], minMax.max[2], separation)
+        const xs = determineSectors(minMax, separation)
+        expect(xs.length).toEqual(prediction_x)
+        expect(xs[0].ys.length).toEqual(prediction_y)
+        expect(xs[0].ys[0].zs.length).toEqual(prediction_z)
     })
 })
 
