@@ -1,6 +1,6 @@
 {
   "name": "pointcloud-3d",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Reduce 3d point clouds using voxel grid sampling or random subsampling",
   "main": "index.js",
   "scripts": {
