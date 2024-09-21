@@ -1,4 +1,7 @@
 # pointcloud-3d
+
+[![npm version](https://badge.fury.io/js/pointcloud-3d.svg)](https://www.npmjs.com/package/pointcloud-3d)
+
 Reduce 3d point clouds using random subsampling or voxel grid sampling
 
 ## Reduce point cloud by subsampling
